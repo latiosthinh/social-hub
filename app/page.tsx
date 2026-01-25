@@ -43,11 +43,13 @@ export default function Dashboard() {
     (window as any).fbAsyncInit = function () {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).FB.init({
-        appId: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID,
+        appId: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || '1409076067613009',
         cookie: true,
         xfbml: true,
         version: 'v18.0'
       });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).FB.AppEvents.logPageView();
     };
 
     (function (d, s, id) {
