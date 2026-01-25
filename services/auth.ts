@@ -1,7 +1,8 @@
-import db from '@/lib/db';
+import { getDb } from '@/lib/db';
 import crypto from 'crypto';
 
 export const login = (email: string) => {
+    const db = getDb();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as any;
     if (!user) {

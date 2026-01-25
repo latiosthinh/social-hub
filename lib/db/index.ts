@@ -1,6 +1,25 @@
 import Database from 'better-sqlite3';
 
-const db = new Database('broadcaster.db', { verbose: console.log });
+import path from 'path';
+
+const dbPath = path.join(process.cwd(), 'broadcaster.db');
+console.log('Opening DB at:', dbPath);
+let dbInstance: Database.Database | null = null;
+
+export function getDb() {
+  if (!dbInstance) {
+    const dbPath = path.join(process.cwd(), 'broadcaster.db');
+    console.log('Initializing DB at:', dbPath);
+    try {
+      dbInstance = new Database(dbPath, { verbose: console.log });
+      initDb(dbInstance);
+    } catch (e) {
+      console.error('Failed to init DB:', e);
+      throw e;
+    }
+  }
+  return dbInstance;
+}
 
 /**
  * Initialize the database schema.
@@ -8,8 +27,8 @@ const db = new Database('broadcaster.db', { verbose: console.log });
  * but for this prototype, checking on import or first use is acceptable/common for side projects.
  * However, Next.js hot-reloads might re-run this. Using a singleton pattern helps.
  */
-export function initDb() {
-    const schema = `
+export function initDb(db: Database.Database) {
+  const schema = `
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       email TEXT UNIQUE,
@@ -57,22 +76,6 @@ export function initDb() {
     );
   `;
 
-    db.exec(schema);
-    console.log('Database initialized');
+  db.exec(schema);
+  console.log('Database initialized');
 }
-
-// Global scope hack to prevent multiple connections in dev mode
-const globalForDb = global as unknown as { db: Database.Database };
-
-// If db already exists in global scope (dev hot-reload), use it, otherwise create new
-// But better-sqlite3 is synchronous and file-based, so just opening it is usually fine
-// unless we want to avoid multiple handles. For now, simple export is fine.
-
-// Run init on first import
-try {
-    initDb();
-} catch (e) {
-    console.error("DB Init error (might be already open):", e);
-}
-
-export default db;
