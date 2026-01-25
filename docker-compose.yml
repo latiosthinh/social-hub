@@ -1,17 +1,11 @@
-services:
-  backend:
-    build: ./backend
-    ports:
-      - "56123:3000"
-    volumes:
-      - ./backend/broadcaster.db:/app/broadcaster.db
-      - ./backend/.env:/app/.env
-    restart: unless-stopped
+version: '3'
 
-  frontend:
-    build: ./frontend
+services:
+  socialhub:
+    build: .
+    container_name: socialhub-app
     ports:
-      - "2340:80"
-    depends_on:
-      - backend
-    restart: unless-stopped
+      - "3240:3000"
+    environment:
+      - NODE_ENV=production
+    restart: always
