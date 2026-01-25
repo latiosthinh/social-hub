@@ -31,3 +31,15 @@ export const getFacebookProfile = async (accessToken: string) => {
     const response = await axios.get(url) as any;
     return response.data;
 };
+
+export const extendFacebookToken = async (shortLivedToken: string) => {
+    const tokenUrl = `https://graph.facebook.com/v18.0/oauth/access_token`;
+    const params = {
+        grant_type: 'fb_exchange_token',
+        client_id: FACEBOOK_APP_ID,
+        client_secret: FACEBOOK_APP_SECRET,
+        fb_exchange_token: shortLivedToken,
+    };
+    const response = await axios.get(tokenUrl, { params });
+    return response.data; // { access_token, token_type, expires_in }
+};

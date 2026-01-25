@@ -37,6 +37,29 @@ export default function Dashboard() {
       return;
     }
     fetchAccounts();
+
+    // Load Facebook SDK
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).fbAsyncInit = function () {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).FB.init({
+        appId: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID,
+        cookie: true,
+        xfbml: true,
+        version: 'v18.0'
+      });
+    };
+
+    (function (d, s, id) {
+      var js, fjs = d.getElementsByTagName(s)[0];
+      if (d.getElementById(id)) { return; }
+      js = d.createElement(s); js.id = id;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (js as any).src = "https://connect.facebook.net/en_US/sdk.js";
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (fjs as any).parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'facebook-jssdk'));
+
   }, []);
 
   const handleToggle = async (id: string, newState: boolean) => {
@@ -57,8 +80,35 @@ export default function Dashboard() {
     if (platform === 'facebook') {
       const userId = localStorage.getItem('user_id');
       if (userId) {
-        // Use new API route for auth
-        window.location.href = `/oauth/${platform}/authorize?userId=${userId}`;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (!(window as any).FB) {
+          alert("Facebook SDK loading... please wait.");
+          return;
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).FB.login((response: any) => {
+          if (response.authResponse) {
+            const accessToken = response.authResponse.accessToken;
+
+            // Send to backend
+            fetch('/api/oauth/facebook/connect', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ accessToken, userId })
+            })
+              .then(res => res.json())
+              .then(data => {
+                if (data.success) {
+                  // alert("Connected: " + data.profile.name);
+                  fetchAccounts();
+                } else {
+                  alert("Failed: " + data.error);
+                }
+              })
+              .catch(err => console.error(err));
+          }
+        }, { scope: 'public_profile,email', auth_type: 'reauthenticate' });
       } else {
         alert("You must be logged in to link an account.");
       }
