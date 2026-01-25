@@ -1,0 +1,17 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "56123:3000"
+    volumes:
+      - ./backend/broadcaster.db:/app/broadcaster.db
+      - ./backend/.env:/app/.env
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "2340:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
