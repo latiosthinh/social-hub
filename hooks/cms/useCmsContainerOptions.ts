@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { containerOptions, isLoadingContainers } from '@/lib/cms/store';
+import { containerOptions, isLoadingContainers, container } from '@/lib/cms/store';
 
 const CONTAINERS_QUERY = `
   query AllRoutesQuery {
@@ -58,10 +58,29 @@ export function useCmsContainerOptions() {
             }
         };
 
-        // Only fetch if we don't have options yet
         if (containerOptions.get().length === 0) {
             fetchContainers();
         }
+
+        // Fetch user default container preference and set if not already set
+        const initDefaultContainer = async () => {
+            const token = localStorage.getItem('auth_token');
+            if (!token) return;
+            try {
+                const res = await fetch('/api/user/container', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                // Only set if we don't have one selected yet
+                if (data.defaultContainerId && !container.get()) {
+                    container.set(data.defaultContainerId);
+                }
+            } catch (e) {
+                console.error("Failed to load user default container", e);
+            }
+        };
+
+        initDefaultContainer();
     }, []);
 
     return {

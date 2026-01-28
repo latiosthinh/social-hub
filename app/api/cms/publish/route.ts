@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { mapToContentItem } from '@/lib/cms/html-parser';
 
 export async function POST(request: NextRequest) {
     const authHeader = request.headers.get('Authorization');
@@ -21,6 +22,34 @@ export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
 
+        // Detect if this is a raw Optimizely payload or our simplified format
+        // The simplified format has 'content' and 'options' keys.
+        // We will enforce the simplified format for consistency with the Public API.
+
+        let contentItem;
+
+        if (body.content && body.options) {
+            const { content, options } = body;
+            contentItem = mapToContentItem(
+                content,
+                options.contentType || 'OpalPage',
+                options.status || 'draft',
+                options.delayPublishUntil,
+                options.container,
+                options.locale || 'en-US',
+                options.isRoutable !== false
+            );
+        } else {
+            // Fallback for backward compatibility or direct usage? 
+            // Better to assume stricter types now to ensure we are using the "API part".
+            // But if the client hasn't been updated yet, this might break. 
+            // Since we are updating the client in the next step, we can enforce it.
+            return NextResponse.json(
+                { error: 'Invalid payload format. Expected { content, options }' },
+                { status: 400 }
+            );
+        }
+
         const response = await fetch(`${apiUrl}/preview3/experimental/content`, {
             method: 'POST',
             headers: {
@@ -28,7 +57,7 @@ export async function POST(request: NextRequest) {
                 'Content-Type': 'application/json',
                 'Authorization': authHeader,
             },
-            body: JSON.stringify(body),
+            body: JSON.stringify(contentItem),
         });
 
         if (!response.ok) {

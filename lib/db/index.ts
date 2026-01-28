@@ -91,6 +91,13 @@ export function initDb(db: Database.Database) {
       // 2. Add unique index
       db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_api_secret_key ON users(api_secret_key)");
     }
+
+    // Migration: Add default_container_id if not exists
+    const hasContainerId = columns.some(col => col.name === 'default_container_id');
+    if (!hasContainerId) {
+      console.log('Migrating: Adding default_container_id to users table');
+      db.exec("ALTER TABLE users ADD COLUMN default_container_id TEXT");
+    }
   } catch (error) {
     console.error('Migration failed:', error);
   }

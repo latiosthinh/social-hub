@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
 
         // Validate key against database
         const db = getDb();
-        const user = db.prepare('SELECT id FROM users WHERE api_secret_key = ?').get(secretKey) as { id: string } | undefined;
+        const user = db.prepare('SELECT id, default_container_id FROM users WHERE api_secret_key = ?').get(secretKey) as { id: string, default_container_id: string } | undefined;
 
         if (!user) {
             return NextResponse.json(
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
 
         // Proceed...
         const body = await request.json();
-        const { content, options } = body;
+        const { content, options = {} } = body;
 
         // Validate required fields
         if (!content || !content.title || !content.body) {
@@ -37,9 +37,11 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        if (!options || !options.container) {
+        const containerId = options.container || user.default_container_id || process.env.CMS_DEFAULT_CONTAINER;
+
+        if (!containerId) {
             return NextResponse.json(
-                { error: 'Missing required options: container is required' },
+                { error: 'Server configuration error: No default container configured. Please set a default container in your user settings or provide one in the request.' },
                 { status: 400 }
             );
         }
@@ -84,7 +86,7 @@ export async function POST(request: NextRequest) {
             options.contentType || 'OpalPage',
             options.status || 'draft',
             options.delayPublishUntil,
-            options.container,
+            containerId,
             options.locale || 'en-US',
             options.isRoutable !== false
         );

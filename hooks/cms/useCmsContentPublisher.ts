@@ -1,4 +1,4 @@
-import { mapToContentItem } from '@/lib/cms/html-parser';
+
 import {
     editedContent,
     displayName,
@@ -42,15 +42,19 @@ export function useCmsContentPublisher() {
         try {
             const token = await authenticate();
 
-            const contentItem = mapToContentItem(
-                { ...currentEditedContent, title: currentDisplayName || currentEditedContent.title },
-                'OpalPage',
-                currentStatus,
-                currentStatus === 'scheduled' ? new Date(currentScheduledDate).toISOString() : undefined,
-                currentContainer || undefined,
-                currentLocale,
-                currentIsRoutable
-            );
+            const payload = {
+                content: {
+                    ...currentEditedContent,
+                    title: currentDisplayName || currentEditedContent.title,
+                },
+                options: {
+                    container: currentContainer,
+                    status: currentStatus,
+                    locale: currentLocale,
+                    delayPublishUntil: currentStatus === 'scheduled' ? new Date(currentScheduledDate).toISOString() : undefined,
+                    isRoutable: currentIsRoutable
+                }
+            };
 
             const response = await fetch('/api/cms/publish', {
                 method: 'POST',
@@ -58,7 +62,7 @@ export function useCmsContentPublisher() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,
                 },
-                body: JSON.stringify(contentItem),
+                body: JSON.stringify(payload),
             });
 
             const data = await response.json();

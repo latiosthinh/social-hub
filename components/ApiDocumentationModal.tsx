@@ -9,8 +9,15 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import { Code, Copy, Check } from "lucide-react";
+import { Code, Copy, Check, Info } from "lucide-react";
 import { useState, useEffect } from "react";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 export function ApiDocumentationModal() {
     const [apiUrl, setApiUrl] = useState('/api/cms/publish-api');
@@ -18,25 +25,99 @@ export function ApiDocumentationModal() {
     const [loading, setLoading] = useState(false);
     const [copied, setCopied] = useState(false);
 
+    // Container state
+    const [containers, setContainers] = useState<any[]>([]);
+    const [defaultContainerId, setDefaultContainerId] = useState<string>('');
+    const [savingContainer, setSavingContainer] = useState(false);
+
     useEffect(() => {
         if (typeof window !== 'undefined') {
             setApiUrl(`${window.location.origin}/api/cms/publish-api`);
-            fetchApiKey();
+            fetchInitialData();
         }
     }, []);
 
-    const fetchApiKey = async () => {
-        try {
-            const token = localStorage.getItem('auth_token');
-            if (!token) return;
+    const fetchInitialData = async () => {
+        const token = localStorage.getItem('auth_token');
+        if (!token) return;
 
-            const res = await fetch('/api/auth/apikey', {
+        try {
+            // 1. Fetch API Key
+            const keyRes = await fetch('/api/auth/apikey', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            const data = await res.json();
-            if (data.apiKey) setApiKey(data.apiKey);
+            const keyData = await keyRes.json();
+            if (keyData.apiKey) setApiKey(keyData.apiKey);
+
+            // 2. Fetch User Default Container
+            const userContainerRes = await fetch('/api/user/container', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const userContainerData = await userContainerRes.json();
+            if (userContainerData.defaultContainerId) setDefaultContainerId(userContainerData.defaultContainerId);
+
+            // 3. Fetch Available Containers from CMS using GraphQL (consistent with app usage)
+            // Use the same query as useCmsContainerOptions.ts
+            const GRAQPHQL_QUERY = `
+              query AllRoutesQuery {
+                BlankExperience {
+                  items {
+                    _itemMetadata {
+                      key
+                      displayName
+                    }
+                  }
+                  total(all: true)
+                }
+              }
+            `;
+
+            const containersRes = await fetch('/api/cms/graphql', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // The internal graphql API doesn't need auth header from client if using env vars
+                    // but we might pass it for consistency if needed, though route.ts ignores it.
+                },
+                body: JSON.stringify({
+                    query: GRAQPHQL_QUERY
+                })
+            });
+            const containersData = await containersRes.json();
+
+            const items = containersData.data?.BlankExperience?.items?.map((item: any) => ({
+                id: item._itemMetadata.key,
+                name: item._itemMetadata.displayName || item._itemMetadata.key,
+            })) || [];
+
+            if (items.length > 0) {
+                setContainers(items);
+            }
+
         } catch (e) {
-            console.error(e);
+            console.error("Failed to fetch initial data", e);
+        }
+    };
+
+    const handleContainerChange = async (value: string) => {
+        setDefaultContainerId(value);
+        setSavingContainer(true);
+        const token = localStorage.getItem('auth_token');
+        if (!token) return;
+
+        try {
+            await fetch('/api/user/container', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ defaultContainerId: value })
+            });
+        } catch (e) {
+            console.error("Failed to save default container", e);
+        } finally {
+            setSavingContainer(false);
         }
     };
 
@@ -88,11 +169,6 @@ const response = await fetch('${apiUrl}', {
     content: {
       title: 'My Article Title',
       body: '<h1>Hello World</h1><p>Content goes here...</p>'
-    },
-    options: {
-      container: 'target-container-guid', // Required
-      status: 'draft', // Optional: draft, published
-      locale: 'en-US'  // Optional
     }
   })
 });
@@ -113,7 +189,7 @@ console.log(result);
                 <DialogHeader>
                     <DialogTitle>Public Content API</DialogTitle>
                     <DialogDescription>
-                        Use this API to push HTML content from other applications to SocialHub.
+                        Configuration and documentation for pushing content to SocialHub.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -150,6 +226,30 @@ console.log(result);
                         ) : (
                             <p className="text-xs text-muted-foreground">You need to generate a secret key to use the API.</p>
                         )}
+                    </div>
+
+                    {/* Default Container Section */}
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-medium">Default Target Container</h3>
+                            <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Info className="h-3 w-3" />
+                                Content will be published to this container if not specified in the request.
+                            </div>
+                        </div>
+                        <Select value={defaultContainerId} onValueChange={handleContainerChange}>
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select a default container..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {containers.map((c) => (
+                                    <SelectItem key={c.id} value={c.id}>
+                                        {c.name || 'Untitled Container'}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        {savingContainer && <span className="text-xs text-muted-foreground animate-pulse">Saving default container...</span>}
                     </div>
 
                     <div className="space-y-2">
