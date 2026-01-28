@@ -33,6 +33,7 @@ export function initDb(db: Database.Database) {
       id TEXT PRIMARY KEY,
       email TEXT UNIQUE,
       password_hash TEXT,
+      api_secret_key TEXT UNIQUE,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -77,5 +78,22 @@ export function initDb(db: Database.Database) {
   `;
 
   db.exec(schema);
+
+  // Migration: Add api_secret_key if not exists
+  try {
+    const columns = db.prepare("PRAGMA table_info(users)").all() as any[];
+    const hasApiKey = columns.some(col => col.name === 'api_secret_key');
+    if (!hasApiKey) {
+      console.log('Migrating: Adding api_secret_key to users table');
+      // SQLite limitation: Cannot add UNIQUE column directly.
+      // 1. Add column
+      db.exec("ALTER TABLE users ADD COLUMN api_secret_key TEXT");
+      // 2. Add unique index
+      db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_api_secret_key ON users(api_secret_key)");
+    }
+  } catch (error) {
+    console.error('Migration failed:', error);
+  }
+
   console.log('Database initialized');
 }

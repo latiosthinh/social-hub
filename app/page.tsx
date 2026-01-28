@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { getAccounts, toggleAccount, toggleGroup, addAccount } from '@/lib/api';
 import { AccountGroup } from '@/components/AccountGroup';
 import { SaasCMSSection } from '@/components/SaasCMSSection';
+import { ApiDocumentationModal } from '@/components/ApiDocumentationModal';
 import { useZignal } from '@/hooks/useZignal';
 import { showFacebook, showLinkedIn, showTikTok, showSaasCMS } from '@/lib/platform-store';
 
@@ -158,9 +159,12 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-6xl mx-auto p-6 pb-32 min-h-screen">
-      <header className="mb-10">
-        <h1 className="text-3xl font-bold tracking-tight mb-2">SocialHub</h1>
-        <p className="text-white/50">Manage your digital presence across multiple networks.</p>
+      <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight mb-2">SocialHub</h1>
+          <p className="text-white/50">Manage your digital presence across multiple networks.</p>
+        </div>
+        <ApiDocumentationModal />
       </header>
 
       {/* Platform Toggles */}

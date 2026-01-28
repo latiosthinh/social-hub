@@ -1,21 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mapToContentItem } from '@/lib/cms/html-parser';
-
-// Secret key for API authentication
-const API_SECRET_KEY = process.env.CMS_API_SECRET_KEY || 'your-secret-key-here';
+import { getDb } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
     try {
         // Check for secret key in headers
         const secretKey = request.headers.get('X-API-Secret-Key');
 
-        if (!secretKey || secretKey !== API_SECRET_KEY) {
+        if (!secretKey) {
             return NextResponse.json(
-                { error: 'Unauthorized: Invalid or missing API secret key' },
+                { error: 'Unauthorized: Missing API secret key' },
                 { status: 401 }
             );
         }
 
+        // Validate key against database
+        const db = getDb();
+        const user = db.prepare('SELECT id FROM users WHERE api_secret_key = ?').get(secretKey) as { id: string } | undefined;
+
+        if (!user) {
+            return NextResponse.json(
+                { error: 'Unauthorized: Invalid API secret key' },
+                { status: 401 }
+            );
+        }
+
+        // Proceed...
         const body = await request.json();
         const { content, options } = body;
 
