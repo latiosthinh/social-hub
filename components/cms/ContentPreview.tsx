@@ -2,7 +2,6 @@
 
 import { editedContent, parsedContent, status, container, isLoading } from '@/lib/cms/store';
 import { useZignal } from '@/hooks/cms/useZignal';
-import PublishingOptions from './PublishingOptions';
 import ContentFields from './ContentFields';
 
 interface ContentPreviewProps {
@@ -31,7 +30,6 @@ export default function ContentPreview({ onPublish }: ContentPreviewProps) {
                 </span>
             </div>
 
-            <PublishingOptions />
             <ContentFields />
 
             {/* Detected Info */}
