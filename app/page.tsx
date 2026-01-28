@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react';
 import { getAccounts, toggleAccount, toggleGroup, addAccount } from '@/lib/api';
 import { AccountGroup } from '@/components/AccountGroup';
+import { SaasCMSSection } from '@/components/SaasCMSSection';
+import { useZignal } from '@/hooks/useZignal';
+import { showFacebook, showLinkedIn, showTikTok, showSaasCMS } from '@/lib/platform-store';
 
 interface Account {
   id: string;
@@ -15,6 +18,12 @@ interface Account {
 export default function Dashboard() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Use Zignal for platform visibility
+  const isFacebookVisible = useZignal(showFacebook);
+  const isLinkedInVisible = useZignal(showLinkedIn);
+  const isTikTokVisible = useZignal(showTikTok);
+  const isSaasCMSVisible = useZignal(showSaasCMS);
 
   const fetchAccounts = async () => {
     try {
@@ -137,8 +146,13 @@ export default function Dashboard() {
     return acc;
   }, {} as Record<string, Account[]>);
 
-  // Ensure order: facebook, linkedin, tiktok
-  const platforms = ['facebook', 'linkedin', 'tiktok'];
+  // Platform configuration
+  const platforms = [
+    { id: 'saascms', label: 'SaasCMS', visible: isSaasCMSVisible, toggle: showSaasCMS },
+    { id: 'facebook', label: 'Facebook', visible: isFacebookVisible, toggle: showFacebook },
+    { id: 'linkedin', label: 'LinkedIn', visible: isLinkedInVisible, toggle: showLinkedIn },
+    { id: 'tiktok', label: 'TikTok', visible: isTikTokVisible, toggle: showTikTok },
+  ];
 
   if (loading) return <div className="p-8 text-center opacity-50 min-h-screen">Loading interface...</div>;
 
@@ -149,16 +163,58 @@ export default function Dashboard() {
         <p className="text-white/50">Manage your digital presence across multiple networks.</p>
       </header>
 
-      {platforms.map(p => (
+      {/* Platform Toggles */}
+      <div className="mb-8 p-4 bg-white/5 rounded-lg border border-white/10">
+        <h3 className="text-sm font-semibold text-white/70 mb-3 uppercase tracking-wider">Platforms</h3>
+        <div className="flex flex-wrap gap-3">
+          {platforms.map(platform => (
+            <button
+              key={platform.id}
+              onClick={() => platform.toggle.set(!platform.visible)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${platform.visible
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-white/10 text-white/50 hover:bg-white/20'
+                }`}
+            >
+              {platform.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Social Platforms */}
+      {isFacebookVisible && (
         <AccountGroup
-          key={p}
-          platform={p}
-          accounts={grouped[p] || []}
+          platform="facebook"
+          accounts={grouped['facebook'] || []}
           onToggleAccount={handleToggle}
           onToggleGroup={handleGroupToggle}
           onLinkAccount={handleLinkAccount}
         />
-      ))}
+      )}
+
+      {isLinkedInVisible && (
+        <AccountGroup
+          platform="linkedin"
+          accounts={grouped['linkedin'] || []}
+          onToggleAccount={handleToggle}
+          onToggleGroup={handleGroupToggle}
+          onLinkAccount={handleLinkAccount}
+        />
+      )}
+
+      {isTikTokVisible && (
+        <AccountGroup
+          platform="tiktok"
+          accounts={grouped['tiktok'] || []}
+          onToggleAccount={handleToggle}
+          onToggleGroup={handleGroupToggle}
+          onLinkAccount={handleLinkAccount}
+        />
+      )}
+
+      {/* SaasCMS Section */}
+      {isSaasCMSVisible && <SaasCMSSection />}
 
     </div>
   );

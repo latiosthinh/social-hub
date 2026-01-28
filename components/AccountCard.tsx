@@ -26,23 +26,23 @@ export function AccountCard({ id, platform, displayName, isActive, onToggle, sta
 
     return (
         <div className={cn(
-            "relative p-4 rounded-xl border border-white/10 backdrop-blur-md transition-all duration-300 group hover:translate-y-[-2px]",
+            "relative p-3 rounded-lg border border-white/10 backdrop-blur-md transition-all duration-300 group hover:translate-y-[-2px]",
             isActive ? "bg-white/5 shadow-lg shadow-black/50" : "bg-white/5 opacity-60 grayscale-[0.5]"
         )}>
-            <div className="flex justify-between items-start mb-4">
-                <div className={cn("w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold text-white", platformColors[platform] || 'bg-gray-600')}>
+            <div className="flex justify-between items-start mb-2">
+                <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white", platformColors[platform] || 'bg-gray-600')}>
                     {platform[0].toUpperCase()}
                 </div>
                 <div className="flex items-center gap-2">
                     {isExpired ? (
-                        <AlertCircle className="w-4 h-4 text-rose-500" />
+                        <AlertCircle className="w-3 h-3 text-rose-500" />
                     ) : (
                         <div className={cn("w-2 h-2 rounded-full", isActive ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-gray-500")} />
                     )}
                 </div>
             </div>
 
-            <h3 className="text-white font-medium text-sm truncate mb-4" title={displayName}>{displayName}</h3>
+            <h3 className="text-white font-medium text-xs truncate mb-2" title={displayName}>{displayName}</h3>
 
             <button
                 onClick={() => !isExpired && onToggle(id, !isActive)}

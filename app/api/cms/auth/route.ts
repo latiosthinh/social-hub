@@ -1,0 +1,46 @@
+import { NextResponse } from 'next/server';
+
+export async function POST() {
+    const clientId = process.env.OPTIMIZELY_CLIENT_ID;
+    const clientSecret = process.env.OPTIMIZELY_CLIENT_SECRET;
+    const apiUrl = process.env.OPTIMIZELY_API_URL;
+
+    if (!clientId || !clientSecret || !apiUrl) {
+        return NextResponse.json(
+            { error: 'Missing Optimizely credentials in environment variables' },
+            { status: 500 }
+        );
+    }
+
+    try {
+        const response = await fetch(`${apiUrl}/oauth/token`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                grant_type: 'client_credentials',
+                client_id: clientId,
+                client_secret: clientSecret,
+            }),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('OAuth failed:', errorText);
+            return NextResponse.json(
+                { error: `Authentication failed: ${response.status}` },
+                { status: response.status }
+            );
+        }
+
+        const data = await response.json();
+        return NextResponse.json(data);
+    } catch (error) {
+        console.error('Auth error:', error);
+        return NextResponse.json(
+            { error: error instanceof Error ? error.message : 'Unknown error' },
+            { status: 500 }
+        );
+    }
+}

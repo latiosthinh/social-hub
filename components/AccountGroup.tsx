@@ -1,4 +1,6 @@
 import { AccountCard } from './AccountCard';
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 
 interface Account {
     id: string;
@@ -24,24 +26,20 @@ export function AccountGroup({ platform, accounts, onToggleAccount, onToggleGrou
         <div className="mb-8">
             <div className="flex items-center justify-between mb-4 px-1">
                 <h2 className="text-lg font-semibold capitalize text-white flex items-center gap-2">
-                    <span className="opacity-70">{platform}</span>
+                    <span className="text-primary">{platform}</span>
                     <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-white/50">{accounts.length}</span>
                 </h2>
 
-                <label className="flex items-center cursor-pointer">
-                    <input
+                <div className="flex items-center gap-3">
+                    <Label htmlFor={`${platform}-toggle`} className="text-xs font-semibold uppercase tracking-wider text-white/70 cursor-pointer">
+                        {allActive ? 'ACTIVE' : 'PAUSED'}
+                    </Label>
+                    <Switch
                         id={`${platform}-toggle`}
-                        type="checkbox"
                         checked={allActive}
-                        onChange={() => onToggleGroup(platform, !allActive)}
-                        className="sr-only peer"
+                        onCheckedChange={(checked) => onToggleGroup(platform, checked)}
                     />
-                    <span className="mr-3 text-xs font-semibold uppercase tracking-wider text-white/70">{allActive ? 'ACTIVE' : 'PAUSED'}</span>
-                    <div className="relative">
-                        <div className="w-11 h-6 bg-white/10 rounded-full border border-white/10 shadow-inner transition-colors duration-200 ease-in-out hover:bg-white/20 peer-checked:bg-blue-600 peer-checked:border-blue-500"></div>
-                        <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-200 ease-in-out ${allActive ? 'translate-x-5' : 'translate-x-0'}`}></div>
-                    </div>
-                </label>
+                </div>
             </div>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -60,10 +58,10 @@ export function AccountGroup({ platform, accounts, onToggleAccount, onToggleGrou
                 {/* Add New placeholder */}
                 <button
                     onClick={() => onLinkAccount(platform)}
-                    className="flex flex-col items-center justify-center p-4 rounded-xl border border-white/10 border-dashed hover:bg-white/5 transition-colors group opacity-50 hover:opacity-100 min-h-[140px]"
+                    className="flex flex-col items-center justify-center p-3 rounded-lg border border-white/10 border-dashed hover:bg-white/5 transition-colors group opacity-50 hover:opacity-100 cursor-pointer min-h-[80px]"
                 >
-                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center mb-2 group-hover:bg-white/20 transition-colors">
-                        <span className="text-xl">+</span>
+                    <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center mb-1 group-hover:bg-white/20 transition-colors">
+                        <span className="text-sm">+</span>
                     </div>
                     <span className="text-xs font-medium">Link {platform}</span>
                 </button>
