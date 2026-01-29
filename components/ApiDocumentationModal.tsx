@@ -163,7 +163,7 @@ const response = await fetch('${apiUrl}', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
-    'X-API-Secret-Key': '${apiKey || 'YOUR_SECRET_KEY'}'
+    'X_API_Secret_Key': '${apiKey || 'YOUR_SECRET_KEY'}'
   },
   body: JSON.stringify({
     content: {

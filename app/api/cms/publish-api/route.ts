@@ -4,8 +4,8 @@ import { getDb } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
     try {
-        // Check for secret key in headers
-        const secretKey = request.headers.get('X-API-Secret-Key');
+        // Check for secret key in headers (support both underscore and hyphen formats)
+        const secretKey = request.headers.get('X_API_Secret_Key') || request.headers.get('X-API-Secret-Key');
 
         if (!secretKey) {
             return NextResponse.json(
