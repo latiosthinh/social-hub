@@ -75,9 +75,33 @@ export function initDb(db: Database.Database) {
       FOREIGN KEY(content_id) REFERENCES content(id),
       FOREIGN KEY(social_account_id) REFERENCES social_accounts(id)
     );
+
+    CREATE TABLE IF NOT EXISTS facebook_pages (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      page_id TEXT NOT NULL,
+      page_name TEXT,
+      access_token TEXT,
+      is_active BOOLEAN DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(user_id) REFERENCES users(id),
+      UNIQUE(user_id, page_id)
+    );
   `;
 
   db.exec(schema);
+
+  // Migration: Add access_token to facebook_pages if not exists
+  try {
+    const columns = db.prepare("PRAGMA table_info(facebook_pages)").all() as any[];
+    const hasAccessToken = columns.some(col => col.name === 'access_token');
+    if (!hasAccessToken) {
+      console.log('Migrating: Adding access_token to facebook_pages table');
+      db.exec("ALTER TABLE facebook_pages ADD COLUMN access_token TEXT");
+    }
+  } catch (error) {
+    console.error('Migration failed for facebook_pages:', error);
+  }
 
   // Migration: Add api_secret_key if not exists
   try {

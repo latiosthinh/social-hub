@@ -5,6 +5,7 @@ import { getAccounts, toggleAccount, toggleGroup, addAccount } from '@/lib/api';
 import { AccountGroup } from '@/components/AccountGroup';
 import { SaasCMSSection } from '@/components/SaasCMSSection';
 import { ApiDocumentationModal } from '@/components/ApiDocumentationModal';
+import { FacebookPagesSection } from '@/components/FacebookPagesSection';
 import { useZignal } from '@/hooks/useZignal';
 import { showFacebook, showLinkedIn, showTikTok, showSaasCMS } from '@/lib/platform-store';
 
@@ -47,31 +48,6 @@ export default function Dashboard() {
       return;
     }
     fetchAccounts();
-
-    // Load Facebook SDK
-    console.log('NEXT_PUBLIC_FACEBOOK_APP_ID:', process.env.NEXT_PUBLIC_FACEBOOK_APP_ID);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window as any).fbAsyncInit = function () {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).FB.init({
-        appId: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || '1409076067613009',
-        cookie: true,
-        xfbml: true,
-        version: 'v18.0'
-      });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).FB.AppEvents.logPageView();
-    };
-
-    (function (d, s, id) {
-      var js, fjs = d.getElementsByTagName(s)[0];
-      if (d.getElementById(id)) { return; }
-      js = d.createElement(s); js.id = id;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (js as any).src = "https://connect.facebook.net/en_US/sdk.js";
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (fjs as any).parentNode.insertBefore(js, fjs);
-    }(document, 'script', 'facebook-jssdk'));
 
   }, []);
 
@@ -189,13 +165,7 @@ export default function Dashboard() {
 
       {/* Social Platforms */}
       {isFacebookVisible && (
-        <AccountGroup
-          platform="facebook"
-          accounts={grouped['facebook'] || []}
-          onToggleAccount={handleToggle}
-          onToggleGroup={handleGroupToggle}
-          onLinkAccount={handleLinkAccount}
-        />
+        <FacebookPagesSection />
       )}
 
       {isLinkedInVisible && (
