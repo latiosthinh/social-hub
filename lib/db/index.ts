@@ -8,7 +8,7 @@ let dbInstance: Database.Database | null = null;
 
 export function getDb() {
   if (!dbInstance) {
-    const dbPath = path.join(process.cwd(), 'broadcaster.db');
+    const dbPath = process.env.DATABASE_PATH || path.join(process.cwd(), 'broadcaster.db');
     console.log('Initializing DB at:', dbPath);
     try {
       dbInstance = new Database(dbPath, { verbose: console.log });
@@ -89,10 +89,17 @@ export function initDb(db: Database.Database) {
     );
   `;
 
-  db.exec(schema);
+  try {
+    db.exec(schema);
+    console.log('initDb: Schema executed successfully');
+  } catch (err) {
+    console.error('initDb: Schema execution failed:', err);
+    throw err;
+  }
 
   // Migration: Add access_token to facebook_pages if not exists
   try {
+    console.log('Migration: Checking facebook_pages columns');
     const columns = db.prepare("PRAGMA table_info(facebook_pages)").all() as any[];
     const hasAccessToken = columns.some(col => col.name === 'access_token');
     if (!hasAccessToken) {
@@ -105,6 +112,7 @@ export function initDb(db: Database.Database) {
 
   // Migration: Add api_secret_key if not exists
   try {
+    console.log('Migration: Checking users columns');
     const columns = db.prepare("PRAGMA table_info(users)").all() as any[];
     const hasApiKey = columns.some(col => col.name === 'api_secret_key');
     if (!hasApiKey) {
@@ -123,8 +131,8 @@ export function initDb(db: Database.Database) {
       db.exec("ALTER TABLE users ADD COLUMN default_container_id TEXT");
     }
   } catch (error) {
-    console.error('Migration failed:', error);
+    console.error('Migration failed for users:', error);
   }
 
-  console.log('Database initialized');
+  console.log('Database initialization complete');
 }

@@ -37,6 +37,9 @@ COPY --from=builder /app/public ./public
 RUN mkdir .next
 RUN chown node:node .next
 
+# Create data directory for SQLite
+RUN mkdir -p /app/data && chown node:node /app/data
+
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder --chown=node:node /app/.next/standalone ./

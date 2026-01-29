@@ -6,4 +6,11 @@ services:
       - "3240:3000"
     environment:
       - NODE_ENV=production
+      - DATABASE_PATH=/app/data/broadcaster.db
+    volumes:
+      - socialhub:/app/data
     restart: always
+
+volumes:
+  socialhub:
+    external: true

@@ -3,24 +3,24 @@ import { login } from '@/services/auth';
 
 export async function POST(request: Request) {
     try {
-        console.log('Login API called');
-        const { email } = await request.json();
-        console.log('Login attempt for:', email);
+        console.log('[Login API] POST request received');
+        const body = await request.json();
+        console.log('[Login API] Body:', body);
+        const { email } = body;
+
         if (!email) {
+            console.log('[Login API] No email provided');
             return NextResponse.json({ error: 'Email is required' }, { status: 400 });
         }
 
-        const { id, email: userEmail, token } = login(email);
-        return NextResponse.json({ id, email: userEmail, token });
+        console.log('[Login API] Attempting login for:', email);
+        const loginResult = login(email);
+        console.log('[Login API] Success:', loginResult);
+
+        return NextResponse.json(loginResult);
     } catch (error: any) {
-        console.error('Login error:', error);
+        console.error('[Login API] Error caught:', error);
 
-        // Log to file for debugging
-        const fs = require('fs');
-        const path = require('path');
-        const logPath = path.join(process.cwd(), 'debug_error.log');
-        fs.appendFileSync(logPath, `\n[${new Date().toISOString()}] Error: ${error?.message}\nStack: ${error?.stack}\n`);
-
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        return NextResponse.json({ error: error?.message || 'Internal server error' }, { status: 500 });
     }
 }
