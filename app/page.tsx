@@ -49,6 +49,7 @@ export default function Dashboard() {
     fetchAccounts();
 
     // Load Facebook SDK
+    console.log('NEXT_PUBLIC_FACEBOOK_APP_ID:', process.env.NEXT_PUBLIC_FACEBOOK_APP_ID);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).fbAsyncInit = function () {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
