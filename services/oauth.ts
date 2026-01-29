@@ -9,11 +9,11 @@ const REDIRECT_URI = process.env.REDIRECT_URI || 'http://localhost:3000/oauth/fa
 export const getFacebookAuthUrl = (state: string) => {
     const scopes = ['public_profile', 'email'];
     // Add 'pages_manage_posts', 'pages_read_engagement' if we want page access later
-    return `https://www.facebook.com/v18.0/dialog/oauth?client_id=${FACEBOOK_APP_ID}&redirect_uri=${REDIRECT_URI}&scope=${scopes.join(',')}&state=${state}&response_type=code`;
+    return `https://www.facebook.com/v24.0/dialog/oauth?client_id=${FACEBOOK_APP_ID}&redirect_uri=${REDIRECT_URI}&scope=${scopes.join(',')}&state=${state}&response_type=code`;
 };
 
 export const exchangeFacebookCode = async (code: string) => {
-    const tokenUrl = `https://graph.facebook.com/v18.0/oauth/access_token`;
+    const tokenUrl = `https://graph.facebook.com/v24.0/oauth/access_token`;
     const params = {
         client_id: FACEBOOK_APP_ID,
         client_redirect_uri: REDIRECT_URI,
@@ -33,7 +33,7 @@ export const getFacebookProfile = async (accessToken: string) => {
 };
 
 export const extendFacebookToken = async (shortLivedToken: string) => {
-    const tokenUrl = `https://graph.facebook.com/v18.0/oauth/access_token`;
+    const tokenUrl = `https://graph.facebook.com/v24.0/oauth/access_token`;
     const params = {
         grant_type: 'fb_exchange_token',
         client_id: FACEBOOK_APP_ID,
