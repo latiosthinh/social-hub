@@ -1,55 +1,74 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+const CONTAINERS_QUERY = `
+  query AllRoutesQuery {
+    BlankExperience {
+      items {
+        _itemMetadata {
+          key
+          displayName
+        }
+      }
+      total(all: true)
+    }
+  }
+`;
+
 export async function GET(request: NextRequest) {
-    const authHeader = request.headers.get('Authorization');
-    const apiUrl = process.env.OPTIMIZELY_API_URL;
-
-    if (!authHeader) {
-        return NextResponse.json(
-            { error: 'Missing Authorization header' },
-            { status: 401 }
-        );
-    }
-
-    if (!apiUrl) {
-        return NextResponse.json(
-            { error: 'Missing API URL in environment variables' },
-            { status: 500 }
-        );
-    }
-
     try {
-        // Fetch content items that can act as containers
-        // Using the experimental content API to list content
-        const response = await fetch(`${apiUrl}/preview3/experimental/content/versions?pageIndex=0&pageSize=50`, {
-            method: 'GET',
+        const graphqlEndpoint = process.env.OPTIMIZELY_GRAPHQL_ENDPOINT;
+        const authToken = process.env.OPTIMIZELY_AUTH_TOKEN;
+
+        if (!graphqlEndpoint || !authToken) {
+            return NextResponse.json(
+                { error: 'GraphQL endpoint or auth token not configured' },
+                { status: 500 }
+            );
+        }
+
+        const response = await fetch(graphqlEndpoint, {
+            method: 'POST',
             headers: {
-                'Accept': 'application/json',
-                'Authorization': authHeader,
+                'Content-Type': 'application/json',
+                'Authorization': `epi-single ${authToken}`,
             },
+            body: JSON.stringify({
+                query: CONTAINERS_QUERY,
+            }),
         });
 
         if (!response.ok) {
             const errorText = await response.text();
+            console.error('Container fetch failed:', {
+                status: response.status,
+                error: errorText
+            });
             return NextResponse.json(
-                { error: `Failed to fetch containers: ${response.status} - ${errorText}` },
+                { error: 'Failed to fetch containers from CMS' },
                 { status: response.status }
             );
         }
 
-        const data = await response.json();
+        const result = await response.json();
 
-        // Filter for container types (pages, folders, etc.)
-        const containers = data.items?.filter((item: any) => {
-            const baseType = item.contentType?.toLowerCase() || '';
-            return baseType.includes('page') || baseType.includes('folder') || baseType.includes('container');
-        }) || [];
+        if (result.errors) {
+            console.error('GraphQL errors:', result.errors);
+            return NextResponse.json(
+                { error: 'GraphQL query failed', details: result.errors },
+                { status: 400 }
+            );
+        }
 
-        return NextResponse.json({ items: containers });
+        const containers = result.data?.BlankExperience?.items?.map((item: any) => ({
+            key: item._itemMetadata.key,
+            displayName: item._itemMetadata.displayName || item._itemMetadata.key,
+        })) || [];
+
+        return NextResponse.json({ containers });
     } catch (error) {
-        console.error('Containers fetch error:', error);
+        console.error('Container API error:', error);
         return NextResponse.json(
-            { error: `Failed to fetch containers: ${error instanceof Error ? error.message : 'Unknown error'}` },
+            { error: 'Internal server error' },
             { status: 500 }
         );
     }

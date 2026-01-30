@@ -37,11 +37,11 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const containerId = options.container || user.default_container_id || process.env.CMS_DEFAULT_CONTAINER;
+        const containerId = options.container;
 
         if (!containerId) {
             return NextResponse.json(
-                { error: 'Server configuration error: No default container configured. Please set a default container in your user settings or provide one in the request.' },
+                { error: 'Missing required field: "container" in options. A target container must be specified.' },
                 { status: 400 }
             );
         }

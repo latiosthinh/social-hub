@@ -37,3 +37,8 @@ export const toggleFacebookPage = (id: string, isActive: boolean): void => {
 export const updateFacebookPageName = (id: string, pageName: string): void => {
     getDb().prepare('UPDATE facebook_pages SET page_name = ? WHERE id = ?').run(pageName, id);
 };
+
+export const resetFacebookPages = (userId: string): boolean => {
+    const result = getDb().prepare('DELETE FROM facebook_pages WHERE user_id = ?').run(userId);
+    return result.changes > 0;
+};
