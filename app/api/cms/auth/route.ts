@@ -1,14 +1,16 @@
 import { NextResponse } from 'next/server';
 
-export async function POST() {
-    const clientId = process.env.OPTIMIZELY_CLIENT_ID;
-    const clientSecret = process.env.OPTIMIZELY_CLIENT_SECRET;
-    const apiUrl = process.env.OPTIMIZELY_API_URL;
+export async function POST(request: Request) {
+    const body = await request.json().catch(() => ({}));
+
+    const clientId = body.clientId || process.env.OPTIMIZELY_CLIENT_ID;
+    const clientSecret = body.clientSecret || process.env.OPTIMIZELY_CLIENT_SECRET;
+    const apiUrl = body.apiUrl || process.env.OPTIMIZELY_API_URL;
 
     if (!clientId || !clientSecret || !apiUrl) {
         return NextResponse.json(
-            { error: 'Missing Optimizely credentials in environment variables' },
-            { status: 500 }
+            { error: 'Missing Optimizely credentials. Please configure them in the UI or environment variables.' },
+            { status: 400 }
         );
     }
 

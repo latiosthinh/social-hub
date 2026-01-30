@@ -1,4 +1,9 @@
-import { accessToken } from '@/lib/cms/store';
+import {
+    accessToken,
+    optimizelyApiUrl,
+    optimizelyClientId,
+    optimizelyClientSecret
+} from '@/lib/cms/store';
 import type { TokenResponse } from '@/lib/cms/types';
 
 export function useCmsAuth() {
@@ -8,7 +13,15 @@ export function useCmsAuth() {
             return currentToken;
         }
 
-        const response = await fetch('/api/cms/auth', { method: 'POST' });
+        const clientId = optimizelyClientId.get();
+        const clientSecret = optimizelyClientSecret.get();
+        const apiUrl = optimizelyApiUrl.get();
+
+        const response = await fetch('/api/cms/auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ clientId, clientSecret, apiUrl })
+        });
         if (!response.ok) {
             const data = await response.json();
             throw new Error(data.error || 'Authentication failed');

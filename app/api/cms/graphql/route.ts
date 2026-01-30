@@ -2,15 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
     try {
-        const { query, variables } = await request.json();
+        const { query, variables, endpoint, token } = await request.json();
 
-        const graphqlEndpoint = process.env.OPTIMIZELY_GRAPHQL_ENDPOINT;
-        const authToken = process.env.OPTIMIZELY_AUTH_TOKEN;
+        const graphqlEndpoint = endpoint || process.env.OPTIMIZELY_GRAPHQL_ENDPOINT;
+        const authToken = token || process.env.OPTIMIZELY_AUTH_TOKEN;
 
         if (!graphqlEndpoint || !authToken) {
             return NextResponse.json(
                 { error: 'GraphQL endpoint or auth token not configured' },
-                { status: 500 }
+                { status: 400 }
             );
         }
 

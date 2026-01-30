@@ -9,7 +9,8 @@ import {
     isRoutable,
     isLoading,
     error,
-    publishResult
+    publishResult,
+    optimizelyApiUrl
 } from '@/lib/cms/store';
 import { useCmsAuth } from './useCmsAuth';
 
@@ -56,13 +57,17 @@ export function useCmsContentPublisher() {
                 }
             };
 
+            const apiUrl = optimizelyApiUrl.get();
             const response = await fetch('/api/cms/publish', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,
                 },
-                body: JSON.stringify(payload),
+                body: JSON.stringify({
+                    ...payload,
+                    apiUrl
+                }),
             });
 
             const data = await response.json();

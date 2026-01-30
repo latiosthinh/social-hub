@@ -3,24 +3,23 @@ import { mapToContentItem } from '@/lib/cms/html-parser';
 
 export async function POST(request: NextRequest) {
     const authHeader = request.headers.get('Authorization');
-    const apiUrl = process.env.OPTIMIZELY_API_URL;
-
-    if (!authHeader) {
-        return NextResponse.json(
-            { error: 'Missing Authorization header' },
-            { status: 401 }
-        );
-    }
-
-    if (!apiUrl) {
-        return NextResponse.json(
-            { error: 'Missing API URL in environment variables' },
-            { status: 500 }
-        );
-    }
-
     try {
         const body = await request.json();
+        const apiUrl = body.apiUrl || process.env.OPTIMIZELY_API_URL;
+
+        if (!authHeader) {
+            return NextResponse.json(
+                { error: 'Missing Authorization header' },
+                { status: 401 }
+            );
+        }
+
+        if (!apiUrl) {
+            return NextResponse.json(
+                { error: 'Missing API URL. Please configure it in the UI or environment variables.' },
+                { status: 400 }
+            );
+        }
 
         // Detect if this is a raw Optimizely payload or our simplified format
         // The simplified format has 'content' and 'options' keys.

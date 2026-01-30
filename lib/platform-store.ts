@@ -4,6 +4,3 @@ export type PlatformType = 'cms' | 'facebook' | 'linkedin' | 'tiktok';
 
 // Platform visibility toggles
 export const showPlatform = createZignal<PlatformType>('cms').store;
-
-// SaasCMS manual upload toggle
-export const showManualUpload = createZignal<boolean>(false).store;

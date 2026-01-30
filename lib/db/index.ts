@@ -134,5 +134,28 @@ export function initDb(db: Database.Database) {
     console.error('Migration failed for users:', error);
   }
 
+  // Migration: Add Optimizely config columns to users table
+  try {
+    console.log('Migration: Checking users table for Optimizely config');
+    const columns = db.prepare("PRAGMA table_info(users)").all() as any[];
+
+    const configColumns = [
+      'opt_client_id',
+      'opt_client_secret',
+      'opt_api_url',
+      'opt_graphql_endpoint',
+      'opt_auth_token'
+    ];
+
+    for (const colName of configColumns) {
+      if (!columns.some(col => col.name === colName)) {
+        console.log(`Migrating: Adding ${colName} to users table`);
+        db.exec(`ALTER TABLE users ADD COLUMN ${colName} TEXT`);
+      }
+    }
+  } catch (error) {
+    console.error('Migration failed for Optimizely config:', error);
+  }
+
   console.log('Database initialization complete');
 }

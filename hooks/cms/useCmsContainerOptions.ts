@@ -1,5 +1,12 @@
 import { useEffect } from 'react';
-import { containerOptions, isLoadingContainers, container } from '@/lib/cms/store';
+import {
+    container,
+    containerOptions,
+    isLoadingContainers,
+    optimizelyAuthToken,
+    optimizelyGraphqlEndpoint
+} from '@/lib/cms/store';
+import { useZignal } from '../useZignal';
 
 const CONTAINERS_QUERY = `
   query AllRoutesQuery {
@@ -16,12 +23,33 @@ const CONTAINERS_QUERY = `
 `;
 
 export function useCmsContainerOptions() {
+    const endpoint = useZignal(optimizelyGraphqlEndpoint);
+    const token = useZignal(optimizelyAuthToken);
+
     useEffect(() => {
         const fetchContainers = async () => {
-            isLoadingContainers.set(true);
+            // Only fetch if we have a token (config loaded from DB/UI)
+            if (!token) {
+                // Should we clear containers? Maybe.
+                // containerOptions.set([]);
+                return;
+            }
+            // Only fetch if we have an endpoint and token (or if we want to try with defaults if they are set)
+            // But if we are waiting for DB load, we should probably wait until we have a token or endpoint.
+            // Check if store has values. The props 'endpoint' and 'token' passed here are reactive.
 
+            // If explicit empty strings in store (default), we might skip or fail. 
+            // However, defaults in store.ts are:
+            // endpoint: 'https://cg.optimizely.com/content/v2'
+            // token: '' 
+
+            // If token is empty, we probably shouldn't fetch yet, UNLESS we expect .env fallback.
+            // But we can't know if .env is there from client.
+            // Let's just try to fetch. If it fails (400), so be it.
+            // BUT, to avoid double fetch (one with default, one with loaded), we can check.
+
+            isLoadingContainers.set(true);
             try {
-                // Call server-side GraphQL route instead of direct GraphQL endpoint
                 const response = await fetch('/api/cms/graphql', {
                     method: 'POST',
                     headers: {
@@ -29,18 +57,27 @@ export function useCmsContainerOptions() {
                     },
                     body: JSON.stringify({
                         query: CONTAINERS_QUERY,
+                        endpoint: endpoint,
+                        token: token
                     }),
                 });
 
                 if (!response.ok) {
-                    throw new Error('Failed to fetch containers');
+                    // Don't throw immediately, just set empty? 
+                    // Or keep silent if it's just auth error?
+                    // throw new Error('Failed to fetch containers');
+                    console.warn('Container fetch failed', response.status);
+                    containerOptions.set([]);
+                    return;
                 }
 
                 const result = await response.json();
 
                 if (result.errors) {
                     console.error('GraphQL errors:', result.errors);
-                    throw new Error('GraphQL query failed');
+                    // throw new Error('GraphQL query failed');
+                    containerOptions.set([]);
+                    return;
                 }
 
                 const containers = result.data?.BlankExperience?.items?.map((item: any) => ({
@@ -51,16 +88,15 @@ export function useCmsContainerOptions() {
                 containerOptions.set(containers);
             } catch (error) {
                 console.error('Error fetching containers:', error);
-                // Set empty array on error so the component can still render
                 containerOptions.set([]);
             } finally {
                 isLoadingContainers.set(false);
             }
         };
 
-        if (containerOptions.get().length === 0) {
-            fetchContainers();
-        }
+        // Trigger fetch if we have somewhat valid looking config OR if we haven't fetched yet
+        // Debounce could be good but since this changes only on Load/Save now, it's fine.
+        fetchContainers();
 
         // Fetch user default container preference and set if not already set
         const initDefaultContainer = async () => {
@@ -80,8 +116,10 @@ export function useCmsContainerOptions() {
             }
         };
 
-        initDefaultContainer();
-    }, []);
+        if (!container.get()) {
+            initDefaultContainer();
+        }
+    }, [endpoint, token]); // Re-run when config changes
 
     return {
         containers: containerOptions.get(),

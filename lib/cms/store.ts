@@ -38,3 +38,10 @@ export interface ContainerOption {
 }
 export const containerOptions = createZignal<ContainerOption[]>([]).store;
 export const isLoadingContainers = createZignal<boolean>(false).store;
+
+// Optimizely Configuration
+export const optimizelyClientId = createZignal<string>('').store;
+export const optimizelyClientSecret = createZignal<string>('').store;
+export const optimizelyApiUrl = createZignal<string>('https://api.cms.optimizely.com').store;
+export const optimizelyGraphqlEndpoint = createZignal<string>('https://cg.optimizely.com/content/v2').store;
+export const optimizelyAuthToken = createZignal<string>('').store;

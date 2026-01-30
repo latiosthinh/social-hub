@@ -5,6 +5,7 @@ import FileUpload from '@/components/cms/FileUpload';
 import ParsedContentEditor from '@/components/cms/ParsedContentEditor';
 import PublishResult from '@/components/cms/PublishResult';
 import SimplifiedPublishingOptions from '@/components/cms/SimplifiedPublishingOptions';
+import { OptimizelyConfig } from '@/components/cms/OptimizelyConfig';
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useCmsContainerOptions } from '@/hooks/cms/useCmsContainerOptions';
@@ -27,10 +28,8 @@ import {
     scheduledDate,
     status
 } from '@/lib/cms/store';
-import { showManualUpload } from '@/lib/platform-store';
 
 export function SaasCMSSection() {
-    const isManualUploadVisible = useZignal(showManualUpload);
     const currentIsParsing = useZignal(isParsing);
     const currentIsLoading = useZignal(isLoading);
     const currentContainer = useZignal(container);
@@ -67,41 +66,30 @@ export function SaasCMSSection() {
                         <span className="text-primary">SaasCMS</span>
                     </h2>
                 </div>
-
-                <div className="flex items-center gap-3">
-                    <Label htmlFor="saascms-manual-upload-toggle" className="text-xs font-semibold uppercase tracking-wider text-white/70 cursor-pointer">
-                        Manual Upload
-                    </Label>
-                    <Switch
-                        id="saascms-manual-upload-toggle"
-                        checked={isManualUploadVisible}
-                        onCheckedChange={(c) => showManualUpload.set(c)}
-                    />
-                </div>
             </div>
 
             <div className="space-y-8">
+                {/* Configuration Section */}
+                <OptimizelyConfig />
+
                 {/* Simplified Publishing Options (Always visible at top) */}
                 <SimplifiedPublishingOptions />
 
-                {/* Manual Upload Section */}
-                {isManualUploadVisible && (
-                    <div className="animate-in slide-in-from-top-4 duration-300 fade-in border-t pt-6 border-border/50">
-                        <FileUpload
-                            onParse={handleParse}
-                            onReset={handleReset}
-                            isParsing={currentIsParsing}
-                        />
+                <div className="animate-in slide-in-from-top-4 duration-300 fade-in border-t pt-6 border-border/50">
+                    <FileUpload
+                        onParse={handleParse}
+                        onReset={handleReset}
+                        isParsing={currentIsParsing}
+                    />
 
-                        <ParsedContentEditor
-                            onPublish={handlePublish}
-                            isPublishing={currentIsLoading}
-                            canPublish={!!currentContainer}
-                        />
+                    <ParsedContentEditor
+                        onPublish={handlePublish}
+                        isPublishing={currentIsLoading}
+                        canPublish={!!currentContainer}
+                    />
 
-                        <ErrorDisplay />
-                    </div>
-                )}
+                    <ErrorDisplay />
+                </div>
 
                 <PublishResult />
             </div>
