@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getContainers } from '@/lib/cms/containers';
 
-export async function GET(request: NextRequest) {
+async function handleRequest() {
     try {
         const containers = await getContainers();
         return NextResponse.json({ containers });
@@ -12,4 +12,12 @@ export async function GET(request: NextRequest) {
             { status: 500 }
         );
     }
+}
+
+export async function GET(request: NextRequest) {
+    return handleRequest();
+}
+
+export async function POST(request: NextRequest) {
+    return handleRequest();
 }

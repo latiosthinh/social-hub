@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mapToContentItem } from '@/lib/cms/html-parser';
-import { getContainers } from '@/lib/cms/containers';
 import { getDb } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
@@ -28,7 +27,8 @@ export async function POST(request: NextRequest) {
 
         // Proceed...
         const body = await request.json();
-        const { content, options = {} } = body;
+        // Support containerId at root or in options for backward compatibility (prefer root)
+        const { content, options = {}, containerId } = body;
 
         // Validate required fields
         if (!content || !content.title || !content.body) {
@@ -38,44 +38,15 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const containerId = options.container;
+        const targetContainerId = containerId || options.container;
 
-        // If no container ID is provided, return the payload for specific container selection
-        if (!containerId) {
-            let containers: any[] = [];
-            try {
-                containers = await getContainers();
-            } catch (error) {
-                console.warn('Failed to fetch containers for selection payload:', error);
-                // Continue without containers, or potentially return an error depending on strictness.
-                // For now, let's allow it to proceed but with empty containers, 
-                // though the frontend might struggle.
-            }
-
-            const contentItem = mapToContentItem(
-                content,
-                options.contentType || 'OpalPage',
-                options.status || 'draft',
-                options.delayPublishUntil,
-                undefined, // No container yet
-                options.locale || 'en-US',
-                options.isRoutable !== false
+        if (!targetContainerId) {
+            return NextResponse.json(
+                { error: 'Missing required field: "containerId" (root) or "container" (in options). A target container must be specified.' },
+                { status: 400 }
             );
-
-            return NextResponse.json({
-                action: 'select_container',
-                payload: {
-                    content: content,
-                    options: {
-                        ...options,
-                    },
-                    mappedItem: contentItem,
-                    containers: containers
-                }
-            });
         }
 
-        // If container ID is provided, proceed to publish
         // Get OAuth token
         const clientId = process.env.OPTIMIZELY_CLIENT_ID;
         const clientSecret = process.env.OPTIMIZELY_CLIENT_SECRET;
@@ -116,7 +87,7 @@ export async function POST(request: NextRequest) {
             options.contentType || 'OpalPage',
             options.status || 'draft',
             options.delayPublishUntil,
-            containerId,
+            targetContainerId,
             options.locale || 'en-US',
             options.isRoutable !== false
         );
