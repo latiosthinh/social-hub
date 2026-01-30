@@ -42,3 +42,7 @@ export const resetFacebookPages = (userId: string): boolean => {
     const result = getDb().prepare('DELETE FROM facebook_pages WHERE user_id = ?').run(userId);
     return result.changes > 0;
 };
+
+export const updateFacebookPageToken = (userId: string, pageId: string, accessToken: string): void => {
+    getDb().prepare('UPDATE facebook_pages SET access_token = ? WHERE user_id = ? AND page_id = ?').run(accessToken, userId, pageId);
+};

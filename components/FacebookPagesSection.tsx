@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FacebookApiGuideModal } from "./FacebookApiGuideModal";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useEffect, useState } from 'react';
 
 interface FacebookPage {
     id: string;
@@ -329,32 +328,63 @@ export function FacebookPagesSection() {
         }
     };
 
-    const handleResetToken = async () => {
-        if (!confirm('Are you sure you want to reset your Facebook connection? This will remove all added pages.')) {
+    const [refreshing, setRefreshing] = useState(false);
+
+    const handleRefreshToken = () => {
+        if (refreshing) return;
+        setRefreshing(true);
+        console.log('[FacebookPages] Refresh process started');
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const fb = (window as any).FB;
+        if (!fb) {
+            console.error('[FacebookPages] FB SDK not found');
+            addLog('Facebook SDK not loaded. Please refresh the page.', 'error');
+            setRefreshing(false);
             return;
         }
 
-        try {
-            const res = await fetch('/api/facebook/reset', {
-                method: 'POST',
-                headers: {
-                    'x-user-id': userId as string
-                }
-            });
-            const data = await res.json();
+        addLog('Opening Facebook login popup...', 'info');
 
-            if (data.success) {
-                setPages([]);
-                setFetchedPages([]);
-                setSelectedPages(new Set());
-                addLog('Facebook access tokens reset successfully.', 'success');
+        fb.login(async (response: any) => {
+            console.log('[FacebookPages] Login callback received:', response);
+
+            if (response.status === 'connected' && response.authResponse) {
+                const userAccessToken = response.authResponse.accessToken;
+                addLog('Facebook re-authentication successful. updating server...', 'info');
+
+                try {
+                    const res = await fetch('/api/facebook/pages/refresh', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-user-id': userId as string
+                        },
+                        body: JSON.stringify({ userAccessToken })
+                    });
+                    const data = await res.json();
+
+                    if (data.success) {
+                        addLog(`✓ ${data.message}`, 'success');
+                        fetchPages();
+                    } else {
+                        addLog('✗ Failed to update server: ' + data.error, 'error');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    addLog('✗ Network error updating tokens', 'error');
+                }
+            } else if (response.status === 'not_authorized') {
+                addLog('⚠ App not authorized. Please approve permissions.', 'warning');
             } else {
-                addLog('Failed to reset tokens: ' + data.error, 'error');
+                addLog('⚠ Login cancelled or failed.', 'warning');
             }
-        } catch (err) {
-            console.error('Failed to reset tokens:', err);
-            addLog('Failed to reset tokens', 'error');
-        }
+            setRefreshing(false);
+        }, {
+            scope: 'pages_show_list,pages_read_engagement,pages_manage_posts',
+            return_scopes: true,
+            auth_type: 'reauthenticate'
+        });
     };
 
     const hasPages = pages.length > 0;
@@ -388,7 +418,6 @@ export function FacebookPagesSection() {
                             >
                                 {testingAll ? 'Testing...' : '🔗 Test All'}
                             </Button>
-                            <FacebookApiGuideModal />
                             <Label htmlFor="fb-pages-toggle" className="text-xs font-semibold uppercase tracking-wider text-white/70 cursor-pointer">
                                 {allActive ? 'ACTIVE' : 'PAUSED'}
                             </Label>
@@ -464,11 +493,11 @@ export function FacebookPagesSection() {
                         <div className="flex items-center gap-4">
                             {hasPages ? (
                                 <Button
-                                    onClick={handleResetToken}
-                                    variant="destructive"
-                                    disabled={isFetchingPages}
+                                    onClick={handleRefreshToken}
+                                    className="bg-orange-600 hover:bg-orange-700 text-white border-none"
+                                    disabled={isFetchingPages || refreshing}
                                 >
-                                    Reset access token
+                                    {refreshing ? 'Refreshing...' : 'Refresh access token'}
                                 </Button>
                             ) : (
                                 <Button
@@ -481,7 +510,7 @@ export function FacebookPagesSection() {
                             )}
                             <p className="text-xs text-white/40">
                                 {hasPages
-                                    ? 'Resetting will disconnect all pages and remove stored tokens.'
+                                    ? 'Refresh will request a new token from Facebook.'
                                     : 'Log in to grant permission to list your pages.'}
                             </p>
                         </div>
@@ -576,11 +605,22 @@ export function FacebookPagesSection() {
 
                                     {/* Test Result */}
                                     {testResults[page.page_id] && (
-                                        <div className={`text-xs mt-2 ${testResults[page.page_id].success
-                                            ? 'text-green-400'
-                                            : 'text-orange-400'
-                                            }`}>
-                                            {testResults[page.page_id].message}
+                                        <div className="mt-2">
+                                            <div className={`text-xs ${testResults[page.page_id].success
+                                                ? 'text-green-400'
+                                                : 'text-orange-400'
+                                                }`}>
+                                                {testResults[page.page_id].message}
+                                            </div>
+                                            {!testResults[page.page_id].success && !testResults[page.page_id].message.includes('Testing...') && (
+                                                <button
+                                                    onClick={handleRefreshToken}
+                                                    disabled={refreshing}
+                                                    className="text-[10px] text-blue-400 hover:text-blue-300 underline mt-1 cursor-pointer bg-transparent border-none p-0 disabled:opacity-50"
+                                                >
+                                                    {refreshing ? 'Refreshing...' : 'Fix connection (Reset Token)'}
+                                                </button>
+                                            )}
                                         </div>
                                     )}
                                 </div>
