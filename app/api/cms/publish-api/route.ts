@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mapToContentItem } from '@/lib/cms/html-parser';
+import { getContainers } from '@/lib/cms/containers';
 import { getDb } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
 
         // Validate key against database
         const db = getDb();
-        const user = db.prepare('SELECT id, default_container_id FROM users WHERE api_secret_key = ?').get(secretKey) as { id: string, default_container_id: string } | undefined;
+        const user = db.prepare('SELECT id FROM users WHERE api_secret_key = ?').get(secretKey) as { id: string } | undefined;
 
         if (!user) {
             return NextResponse.json(
@@ -39,13 +40,42 @@ export async function POST(request: NextRequest) {
 
         const containerId = options.container;
 
+        // If no container ID is provided, return the payload for specific container selection
         if (!containerId) {
-            return NextResponse.json(
-                { error: 'Missing required field: "container" in options. A target container must be specified.' },
-                { status: 400 }
+            let containers: any[] = [];
+            try {
+                containers = await getContainers();
+            } catch (error) {
+                console.warn('Failed to fetch containers for selection payload:', error);
+                // Continue without containers, or potentially return an error depending on strictness.
+                // For now, let's allow it to proceed but with empty containers, 
+                // though the frontend might struggle.
+            }
+
+            const contentItem = mapToContentItem(
+                content,
+                options.contentType || 'OpalPage',
+                options.status || 'draft',
+                options.delayPublishUntil,
+                undefined, // No container yet
+                options.locale || 'en-US',
+                options.isRoutable !== false
             );
+
+            return NextResponse.json({
+                action: 'select_container',
+                payload: {
+                    content: content,
+                    options: {
+                        ...options,
+                    },
+                    mappedItem: contentItem,
+                    containers: containers
+                }
+            });
         }
 
+        // If container ID is provided, proceed to publish
         // Get OAuth token
         const clientId = process.env.OPTIMIZELY_CLIENT_ID;
         const clientSecret = process.env.OPTIMIZELY_CLIENT_SECRET;
@@ -80,7 +110,7 @@ export async function POST(request: NextRequest) {
         const authData = await authResponse.json();
         const accessToken = authData.access_token;
 
-        // Map content to Optimizely format
+        // Map content to Optimizely format with the provided container
         const contentItem = mapToContentItem(
             content,
             options.contentType || 'OpalPage',

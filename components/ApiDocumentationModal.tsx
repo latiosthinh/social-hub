@@ -3,13 +3,6 @@
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import {
     Sheet,
     SheetContent,
     SheetDescription,
@@ -18,7 +11,7 @@ import {
     SheetTrigger,
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, Copy, Info, Terminal } from "lucide-react";
+import { Check, Copy, Terminal } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export function ApiDocumentationModal() {
@@ -26,11 +19,6 @@ export function ApiDocumentationModal() {
     const [apiKey, setApiKey] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [copied, setCopied] = useState(false);
-
-    // Container state
-    const [containers, setContainers] = useState<any[]>([]);
-    const [defaultContainerId, setDefaultContainerId] = useState<string>('');
-    const [savingContainer, setSavingContainer] = useState(false);
 
     // Facebook API state
     const [facebookApiUrl, setFacebookApiUrl] = useState('');
@@ -41,90 +29,8 @@ export function ApiDocumentationModal() {
             setApiUrl(`${window.location.origin}/api/cms/publish-api`);
             setFacebookApiUrl(`${window.location.origin}/api/facebook/publish-api`);
             setFacebookResetApiUrl(`${window.location.origin}/api/facebook/reset`);
-            fetchInitialData();
         }
     }, []);
-
-    const fetchInitialData = async () => {
-        const token = localStorage.getItem('auth_token');
-        if (!token) return;
-
-        try {
-            // 1. Fetch API Key
-            const keyRes = await fetch('/api/auth/apikey', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const keyData = await keyRes.json();
-            if (keyData.apiKey) setApiKey(keyData.apiKey);
-
-            // 2. Fetch User Default Container
-            const userContainerRes = await fetch('/api/user/container', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const userContainerData = await userContainerRes.json();
-            if (userContainerData.defaultContainerId) setDefaultContainerId(userContainerData.defaultContainerId);
-
-            // 3. Fetch Available Containers from CMS
-            const GRAQPHQL_QUERY = `
-              query AllRoutesQuery {
-                BlankExperience {
-                  items {
-                    _itemMetadata {
-                      key
-                      displayName
-                    }
-                  }
-                  total(all: true)
-                }
-              }
-            `;
-
-            const containersRes = await fetch('/api/cms/graphql', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    query: GRAQPHQL_QUERY
-                })
-            });
-            const containersData = await containersRes.json();
-
-            const items = containersData.data?.BlankExperience?.items?.map((item: any) => ({
-                id: item._itemMetadata.key,
-                name: item._itemMetadata.displayName || item._itemMetadata.key,
-            })) || [];
-
-            if (items.length > 0) {
-                setContainers(items);
-            }
-
-        } catch (e) {
-            console.error("Failed to fetch initial data", e);
-        }
-    };
-
-    const handleContainerChange = async (value: string) => {
-        setDefaultContainerId(value);
-        setSavingContainer(true);
-        const token = localStorage.getItem('auth_token');
-        if (!token) return;
-
-        try {
-            await fetch('/api/user/container', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ defaultContainerId: value })
-            });
-        } catch (e) {
-            console.error("Failed to save default container", e);
-        } finally {
-            setSavingContainer(false);
-        }
-    };
 
     const generateApiKey = async () => {
         try {
@@ -277,30 +183,6 @@ console.log(data);`;
 
                     {/* CMS Content */}
                     <TabsContent value="cms" className="space-y-6">
-                        {/* Default Container Section */}
-                        <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                                <h3 className="text-sm font-medium">Default Target Container</h3>
-                                <div className="text-xs text-muted-foreground flex items-center gap-1">
-                                    <Info className="h-3 w-3" />
-                                    Content will be published to this container if not specified.
-                                </div>
-                            </div>
-                            <Select value={defaultContainerId} onValueChange={handleContainerChange}>
-                                <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Select a default container..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {containers.map((c) => (
-                                        <SelectItem key={c.id} value={c.id}>
-                                            {c.name || 'Untitled Container'}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {savingContainer && <span className="text-xs text-muted-foreground animate-pulse">Saving default container...</span>}
-                        </div>
-
                         <div className="space-y-2">
                             <h3 className="text-sm font-medium">Endpoint</h3>
                             <div className="bg-muted p-2 rounded-md font-mono text-xs break-all border">
