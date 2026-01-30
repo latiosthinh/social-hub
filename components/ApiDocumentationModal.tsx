@@ -29,8 +29,25 @@ export function ApiDocumentationModal() {
             setApiUrl(`${window.location.origin}/api/cms/publish-api`);
             setFacebookApiUrl(`${window.location.origin}/api/facebook/publish-api`);
             setFacebookResetApiUrl(`${window.location.origin}/api/facebook/reset`);
+            fetchInitialData();
         }
     }, []);
+
+    const fetchInitialData = async () => {
+        const token = localStorage.getItem('auth_token');
+        if (!token) return;
+
+        try {
+            // Fetch API Key
+            const keyRes = await fetch('/api/auth/apikey', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const keyData = await keyRes.json();
+            if (keyData.apiKey) setApiKey(keyData.apiKey);
+        } catch (e) {
+            console.error("Failed to fetch initial data", e);
+        }
+    };
 
     const generateApiKey = async () => {
         try {
