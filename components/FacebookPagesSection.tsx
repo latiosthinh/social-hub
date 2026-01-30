@@ -393,8 +393,6 @@ export function FacebookPagesSection() {
         return <div className="p-4 opacity-50">Loading Facebook pages...</div>;
     }
 
-    const allActive = pages.length > 0 && pages.every(p => p.is_active);
-
     return (
         <div className="mb-8">
             {/* Header */}
@@ -406,31 +404,17 @@ export function FacebookPagesSection() {
                     </span>
                 </h2>
 
-                <div className="flex items-center gap-3">
-                    {pages.length > 0 && (
-                        <>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={testAllPages}
-                                disabled={testingAll}
-                                className="text-xs"
-                            >
-                                {testingAll ? 'Testing...' : '🔗 Test All'}
-                            </Button>
-                            <Label htmlFor="fb-pages-toggle" className="text-xs font-semibold uppercase tracking-wider text-white/70 cursor-pointer">
-                                {allActive ? 'ACTIVE' : 'PAUSED'}
-                            </Label>
-                            <Switch
-                                id="fb-pages-toggle"
-                                checked={allActive}
-                                onCheckedChange={(checked) => {
-                                    pages.forEach(p => handleToggle(p.id, checked));
-                                }}
-                            />
-                        </>
-                    )}
-                </div>
+                {pages.length > 0 && (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={testAllPages}
+                        disabled={testingAll}
+                        className="text-xs cursor-pointer"
+                    >
+                        {testingAll ? 'Testing...' : '🔗 Test All'}
+                    </Button>
+                )}
             </div>
 
             {/* Add New Page Form */}

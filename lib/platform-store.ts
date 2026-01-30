@@ -1,10 +1,9 @@
 import { createZignal } from '@zignal/core';
 
+export type PlatformType = 'cms' | 'facebook' | 'linkedin' | 'tiktok';
+
 // Platform visibility toggles
-export const showFacebook = createZignal<boolean>(true).store;
-export const showLinkedIn = createZignal<boolean>(false).store;
-export const showTikTok = createZignal<boolean>(false).store;
-export const showSaasCMS = createZignal<boolean>(true).store;
+export const showPlatform = createZignal<PlatformType>('cms').store;
 
 // SaasCMS manual upload toggle
 export const showManualUpload = createZignal<boolean>(false).store;

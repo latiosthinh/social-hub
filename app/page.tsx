@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { getAccounts, toggleAccount, toggleGroup, addAccount } from '@/lib/api';
 import { AccountGroup } from '@/components/AccountGroup';
-import { SaasCMSSection } from '@/components/SaasCMSSection';
 import { ApiDocumentationModal } from '@/components/ApiDocumentationModal';
 import { FacebookPagesSection } from '@/components/FacebookPagesSection';
+import { SaasCMSSection } from '@/components/SaasCMSSection';
 import { useZignal } from '@/hooks/useZignal';
-import { showFacebook, showLinkedIn, showTikTok, showSaasCMS } from '@/lib/platform-store';
+import { addAccount, getAccounts, toggleAccount, toggleGroup } from '@/lib/api';
+import { PlatformType, showPlatform } from '@/lib/platform-store';
+import { useEffect, useState } from 'react';
 
 interface Account {
   id: string;
@@ -22,10 +22,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   // Use Zignal for platform visibility
-  const isFacebookVisible = useZignal(showFacebook);
-  const isLinkedInVisible = useZignal(showLinkedIn);
-  const isTikTokVisible = useZignal(showTikTok);
-  const isSaasCMSVisible = useZignal(showSaasCMS);
+  const selectedPlatform = useZignal(showPlatform);
 
   const fetchAccounts = async () => {
     try {
@@ -126,10 +123,10 @@ export default function Dashboard() {
 
   // Platform configuration
   const platforms = [
-    { id: 'saascms', label: 'SaasCMS', visible: isSaasCMSVisible, toggle: showSaasCMS },
-    { id: 'facebook', label: 'Facebook', visible: isFacebookVisible, toggle: showFacebook },
-    { id: 'linkedin', label: 'LinkedIn', visible: isLinkedInVisible, toggle: showLinkedIn },
-    { id: 'tiktok', label: 'TikTok', visible: isTikTokVisible, toggle: showTikTok },
+    { id: 'cms', label: 'SaasCMS', visible: selectedPlatform === 'cms', toggle: showPlatform },
+    { id: 'facebook', label: 'Facebook', visible: selectedPlatform === 'facebook', toggle: showPlatform },
+    { id: 'linkedin', label: 'LinkedIn', visible: selectedPlatform === 'linkedin', toggle: showPlatform },
+    { id: 'tiktok', label: 'TikTok', visible: selectedPlatform === 'tiktok', toggle: showPlatform },
   ];
 
   if (loading) return <div className="p-8 text-center opacity-50 min-h-screen">Loading interface...</div>;
@@ -151,7 +148,7 @@ export default function Dashboard() {
           {platforms.map(platform => (
             <button
               key={platform.id}
-              onClick={() => platform.toggle.set(!platform.visible)}
+              onClick={() => platform.toggle.set(platform.id as PlatformType)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${platform.visible
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-white/10 text-white/50 hover:bg-white/20'
@@ -164,11 +161,11 @@ export default function Dashboard() {
       </div>
 
       {/* Social Platforms */}
-      {isFacebookVisible && (
+      {selectedPlatform === 'facebook' && (
         <FacebookPagesSection />
       )}
 
-      {isLinkedInVisible && (
+      {selectedPlatform === 'linkedin' && (
         <AccountGroup
           platform="linkedin"
           accounts={grouped['linkedin'] || []}
@@ -178,7 +175,7 @@ export default function Dashboard() {
         />
       )}
 
-      {isTikTokVisible && (
+      {selectedPlatform === 'tiktok' && (
         <AccountGroup
           platform="tiktok"
           accounts={grouped['tiktok'] || []}
@@ -189,7 +186,7 @@ export default function Dashboard() {
       )}
 
       {/* SaasCMS Section */}
-      {isSaasCMSVisible && <SaasCMSSection />}
+      {selectedPlatform === 'cms' && <SaasCMSSection />}
 
     </div>
   );

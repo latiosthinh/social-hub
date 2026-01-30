@@ -1,34 +1,33 @@
 'use client';
 
-import { useZignal } from '@/hooks/useZignal';
-import { showManualUpload } from '@/lib/platform-store';
 import ErrorDisplay from '@/components/cms/ErrorDisplay';
-import PublishResult from '@/components/cms/PublishResult';
 import FileUpload from '@/components/cms/FileUpload';
-import SimplifiedPublishingOptions from '@/components/cms/SimplifiedPublishingOptions';
 import ParsedContentEditor from '@/components/cms/ParsedContentEditor';
+import PublishResult from '@/components/cms/PublishResult';
+import SimplifiedPublishingOptions from '@/components/cms/SimplifiedPublishingOptions';
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { useCmsContainerOptions } from '@/hooks/cms/useCmsContainerOptions';
 import { useCmsContentParser } from '@/hooks/cms/useCmsContentParser';
 import { useCmsContentPublisher } from '@/hooks/cms/useCmsContentPublisher';
-import { useCmsContainerOptions } from '@/hooks/cms/useCmsContainerOptions';
+import { useZignal } from '@/hooks/useZignal';
 import {
+    container,
+    displayName,
+    editedContent,
+    error,
     fileName,
     htmlContent,
-    parsedContent,
-    editedContent,
-    displayName,
-    status,
-    scheduledDate,
-    container,
-    locale,
-    isRoutable,
-    publishResult,
-    error,
+    isLoading,
     isParsing,
-    isLoading
+    isRoutable,
+    locale,
+    parsedContent,
+    publishResult,
+    scheduledDate,
+    status
 } from '@/lib/cms/store';
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
-import { ChevronDown, ChevronUp, FolderOpen, X } from "lucide-react"
+import { showManualUpload } from '@/lib/platform-store';
 
 export function SaasCMSSection() {
     const isManualUploadVisible = useZignal(showManualUpload);

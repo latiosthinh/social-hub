@@ -221,7 +221,7 @@ console.log(data);`;
     return (
         <Sheet>
             <SheetTrigger asChild>
-                <Button variant="outline" className="cursor-pointer gap-2 bg-background/5 text-foreground hover:bg-background/10 border-white/10">
+                <Button variant="outline" className="cursor-pointer gap-2">
                     <Terminal className="w-4 h-4" />
                     API Guide
                 </Button>
